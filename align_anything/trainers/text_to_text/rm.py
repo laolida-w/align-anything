@@ -174,6 +174,11 @@ class RMTrainer(SupervisedTrainerBase):
         )
 
         rewards = []
+        all_better_texts = []
+        all_worse_texts = []
+        all_better_scores = []
+        all_worse_scores = []
+
         batch = None
         for batch in eval_dataloader:
             output = self.model(**self.infer_batch(batch))
@@ -186,6 +191,29 @@ class RMTrainer(SupervisedTrainerBase):
             num_total_predictions += batch_size
 
             rewards.extend([higher_end_rewards, lower_end_rewards])
+            #收集结果
+            better_input_ids, worse_input_ids = batch['input_ids'].chunk(chunks=2, dim=0)
+            better_texts = self.tokenizer.batch_decode(better_input_ids, skip_special_tokens=True)
+            worse_texts = self.tokenizer.batch_decode(worse_input_ids, skip_special_tokens=True)
+            all_better_texts.extend(better_texts)
+            all_worse_texts.extend(worse_texts)
+            all_better_scores.extend(higher_end_rewards.tolist())
+            all_worse_scores.extend(lower_end_rewards.tolist())
+        #收集结果
+        if is_main_process():
+            import os, json
+            output_file = "/root/align-anything/test_output/eval_rewards.jsonl"
+            with open(output_file, "w", encoding="utf-8") as fout:
+                for hi_text, lo_text, hi_score, lo_score in zip(
+                    all_better_texts, all_worse_texts, all_better_scores, all_worse_scores
+                ):
+                    json.dump({
+                        "better_response": hi_text,
+                        "worse_response": lo_text,
+                        "better_reward": hi_score,
+                        "worse_reward": lo_score
+                    }, fout, ensure_ascii=False)
+                    fout.write("\n")
 
         if batch is None:
             self.logger.print('WARNING: `eval_dataloader` is empty.')
@@ -215,6 +243,7 @@ class RMTrainer(SupervisedTrainerBase):
             'eval/reward_std': rewards.std().item(),
         }
 
+
         if is_main_process():
             # Print some examples from the last batch
             max_num_rows = 5
@@ -235,10 +264,10 @@ class RMTrainer(SupervisedTrainerBase):
 
             h_rewards = [f'{reward:.6f}' for reward in higher_end_rewards.tolist()]
             l_rewards = [f'{reward:.6f}' for reward in lower_end_rewards.tolist()]
-
             title = ', '.join(
                 f'{key.rpartition("/")[-1]} = {value:.6f}' for key, value in info.items()
             )
+
             self.logger.print_table(
                 title=f'Evaluation: {title}',
                 columns=[
@@ -357,6 +386,7 @@ def main():
 
     # setup training
     cfgs = dict_to_namedtuple(dict_cfgs)
+
     seed_everything(cfgs.train_cfgs.seed)
 
     # finetune the model

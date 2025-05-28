@@ -16,10 +16,10 @@
 # ==============================================================================
 
 
-MODEL_NAME_OR_PATH="Qwen/Qwen2.5-0.5B-Instruct" # model path
+MODEL_NAME_OR_PATH="/root/data/Qwen2.5-0.5B-Instruct" # model path
 
-TRAIN_DATASETS="../assets/text_to_text/preference" # rm dataset path
-TRAIN_TEMPLATE="PKUSafeRLHF" # dataset template
+TRAIN_DATASETS="/root/data/align_anything_t2t" # rm dataset path  /root/data/align_anything_t2t  ../assets/text_to_text/preference
+TRAIN_TEMPLATE="HOMEWORK" # dataset template
 TRAIN_SPLIT="train" # split the dataset
 
 OUTPUT_ROOT_DIR=$OUTPUT_ROOT_DIR
@@ -46,4 +46,7 @@ deepspeed \
      --train_datasets ${TRAIN_DATASETS} \
      --train_split ${TRAIN_SPLIT} \
      --output_dir ${OUTPUT_DIR} \
-     --epochs 1 
+     --report_to all \
+     --epochs 1 \
+     
+     

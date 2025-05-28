@@ -27,9 +27,9 @@ train_cfgs:
   # Seed for random number generator
   seed: 42
   # Batch size per device for training
-  per_device_train_batch_size: 1
+  per_device_train_batch_size: 16
   # Batch size per device for evaluation
-  per_device_eval_batch_size: 1
+  per_device_eval_batch_size: 16
   # The number of gradient accumulation steps
   gradient_accumulation_steps: 2
   # Whether to use gradient checkpointing
@@ -87,7 +87,7 @@ data_cfgs:
 # The logging configurations
 logger_cfgs:
   # Type of logging to use, choosing from [wandb, tensorboard]
-  log_type: wandb
+  log_type: tensorboard
   # Project name for logging
   log_project: align-anything
   # Run name for logging

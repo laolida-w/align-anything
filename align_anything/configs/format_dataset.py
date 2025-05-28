@@ -242,6 +242,55 @@ class PKUSafeRLHF(BaseFormatter):
         ], {}
 
 
+@register_template('HOMEWORK')
+class HOMEWORK(BaseFormatter):
+    system_prompt: str = ''
+
+    def format_preference_sample(
+        self, raw_sample: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        preferred = int(raw_sample["overall_response"])
+        assert preferred in [1, 2], f"Invalid overall_response: {preferred}"
+
+        better_response = raw_sample[f"response_{preferred}"]
+        worse_response = raw_sample[f"response_{'1' if preferred == 2 else '2'}"]
+        question = raw_sample["question"]
+
+        better_conversation = [
+            {"role": "user", "content": question},
+            {"role": "assistant", "content": better_response},
+        ]
+
+        worse_conversation = [
+            {"role": "user", "content": question},
+            {"role": "assistant", "content": worse_response},
+        ]
+
+        meta_info = {
+            "better_response": better_response,
+            "worse_response": worse_response,
+        }
+
+        return better_conversation, worse_conversation, meta_info
+    
+    def format_prompt_only_sample(
+        self, raw_sample: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], str]:
+        prompt = raw_sample['prompt']
+        return [
+            {'role': 'user', 'content': prompt},
+        ], {}
+
+    def format_unmatched_supervised_sample(
+        self, raw_sample_for_prompt: dict[str, Any], raw_sample_for_response: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], str]:
+        prompt = raw_sample_for_prompt['prompt']
+        response = raw_sample_for_response['response_1']
+        return [
+            {'role': 'user', 'content': prompt},
+            {'role': 'assistant', 'content': response},
+        ], {}
+
 @register_template('Aligner')
 class Aligner(BaseFormatter):
     system_prompt: str = ''
